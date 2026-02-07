@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Knowi Search</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes pulse-green {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .pulse-green { animation: pulse-green 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <h1 class="text-xl font-bold text-gray-900">🔧 Admin Dashboard</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="/" class="text-gray-600 hover:text-gray-900">← Back to Chat</a>
+                    <a href="/admin/cache" class="text-gray-600 hover:text-gray-900">Cache</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Status Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <!-- Index Status -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-sm font-medium text-gray-500">Search Index</h3>
+                    <span class="text-2xl">📚</span>
+                </div>
+                <div class="text-3xl font-bold text-gray-900" id="docCount">Loading...</div>
+                <p class="text-sm mt-1">
+                    <span id="indexStatus" class="text-gray-600">Checking...</span>
+                </p>
+            </div>
+
+            <!-- Cache Status -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-sm font-medium text-gray-500">Cache Hit Rate</h3>
+                    <span class="text-2xl">⚡</span>
+                </div>
+                <div class="text-3xl font-bold text-gray-900" id="hitRate">Loading...</div>
+                <p class="text-sm text-gray-600 mt-1">L1 + L2 combined</p>
+            </div>
+
+            <!-- System Status -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-sm font-medium text-gray-500">System Status</h3>
+                    <span class="text-2xl pulse-green">🟢</span>
+                </div>
+                <div class="text-3xl font-bold text-green-600">Healthy</div>
+                <p class="text-sm text-gray-600 mt-1">All systems operational</p>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="bg-white rounded-lg shadow mb-8">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h2 class="text-lg font-semibold text-gray-900">Quick Actions</h2>
+            </div>
+            <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <button onclick="clearCache()" class="px-4 py-3 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition-colors font-medium">
+                        🗑️ Clear All Caches
+                    </button>
+                    <button onclick="rebuildIndex()" class="px-4 py-3 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors font-medium">
+                        🔄 Rebuild Index
+                    </button>
+                    <button onclick="refreshStats()" class="px-4 py-3 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition-colors font-medium">
+                        📊 Refresh Stats
+                    </button>
+                    <a href="/admin/cache" class="px-4 py-3 bg-purple-50 text-purple-700 rounded-lg hover:bg-purple-100 transition-colors font-medium text-center">
+                        ⚙️ Manage Cache
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detailed Stats -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Cache Statistics -->
+            <div class="bg-white rounded-lg shadow">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h2 class="text-lg font-semibold text-gray-900">Cache Statistics</h2>
+                </div>
+                <div class="p-6">
+                    <div id="cacheDetails" class="space-y-3">
+                        <div class="flex justify-between py-2 border-b">
+                            <span class="text-gray-600">Loading...</span>
+                            <span class="font-medium">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Index Information -->
+            <div class="bg-white rounded-lg shadow">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h2 class="text-lg font-semibold text-gray-900">Search Index Info</h2>
+                </div>
+                <div class="p-6">
+                    <div id="indexDetails" class="space-y-3">
+                        <div class="flex justify-between py-2 border-b">
+                            <span class="text-gray-600">Loading...</span>
+                            <span class="font-medium">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Activity Log -->
+        <div class="bg-white rounded-lg shadow mt-6">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h2 class="text-lg font-semibold text-gray-900">Recent Activity</h2>
+            </div>
+            <div class="p-6">
+                <div id="activityLog" class="space-y-2 text-sm text-gray-600">
+                    <div class="flex items-center space-x-2">
+                        <span class="text-gray-400">[System]</span>
+                        <span>Dashboard loaded</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function addLog(message) {
+            const log = document.getElementById('activityLog');
+            const time = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.className = 'flex items-center space-x-2';
+            entry.innerHTML = `
+                <span class="text-gray-400">[${time}]</span>
+                <span>${message}</span>
+            `;
+            log.insertBefore(entry, log.firstChild);
+
+            while (log.children.length > 10) {
+                log.removeChild(log.lastChild);
+            }
+        }
+
+        async function loadIndexStatus() {
+            try {
+                const response = await fetch('/api/index/status');
+                const data = await response.json();
+
+                document.getElementById('docCount').textContent = data.documentCount || 0;
+
+                const statusEl = document.getElementById('indexStatus');
+                if (data.indexed) {
+                    statusEl.textContent = '✓ Indexed';
+                    statusEl.className = 'text-green-600';
+                } else {
+                    statusEl.textContent = '⚠ Not indexed';
+                    statusEl.className = 'text-yellow-600';
+                }
+
+                // Update index details
+                const indexDetails = document.getElementById('indexDetails');
+                indexDetails.innerHTML = `
+                    <div class="flex justify-between py-2 border-b">
+                        <span class="text-gray-600">Status</span>
+                        <span class="font-medium ${data.indexed ? 'text-green-600' : 'text-yellow-600'}">
+                            ${data.indexed ? 'Active' : 'Not Built'}
+                        </span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b">
+                        <span class="text-gray-600">Documents</span>
+                        <span class="font-medium">${data.documentCount || 0}</span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b">
+                        <span class="text-gray-600">Storage</span>
+                        <span class="font-medium">Lucene 9.12</span>
+                    </div>
+                    <div class="flex justify-between py-2">
+                        <span class="text-gray-600">Type</span>
+                        <span class="font-medium">Full-text search</span>
+                    </div>
+                `;
+            } catch (error) {
+                document.getElementById('docCount').textContent = 'Error';
+                document.getElementById('indexStatus').textContent = '❌ Failed to load';
+                addLog('❌ Failed to load index status');
+            }
+        }
+
+        async function refreshStats() {
+            try {
+                const response = await fetch('/api/cache/stats');
+                const stats = await response.json();
+
+                const hitRate = stats.combined_hit_rate || 'N/A';
+                document.getElementById('hitRate').textContent = hitRate;
+
+                const detailsDiv = document.getElementById('cacheDetails');
+                detailsDiv.innerHTML = `
+                    <div class="flex justify-between py-2 border-b">
+                        <span class="text-gray-600">Hit Rate</span>
+                        <span class="font-medium text-green-600">${hitRate}</span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b">
+                        <span class="text-gray-600">Total Hits</span>
+                        <span class="font-medium">${stats.total_hits || 0}</span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b">
+                        <span class="text-gray-600">Total Misses</span>
+                        <span class="font-medium">${stats.total_misses || 0}</span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b">
+                        <span class="text-gray-600">Fingerprints</span>
+                        <span class="font-medium">${stats.fingerprints || 0}</span>
+                    </div>
+                    <div class="flex justify-between py-2">
+                        <span class="text-gray-600">L2 Status</span>
+                        <span class="font-medium">${stats.l2 === 'disabled' ? 'Disabled' : 'Enabled'}</span>
+                    </div>
+                `;
+
+                addLog('Stats refreshed');
+            } catch (error) {
+                addLog('❌ Failed to refresh stats');
+            }
+        }
+
+        async function clearCache() {
+            if (!confirm('Are you sure you want to clear all caches?')) return;
+
+            try {
+                const response = await fetch('/api/cache/clear', { method: 'POST' });
+                const data = await response.json();
+
+                if (data.success) {
+                    addLog('✓ All caches cleared');
+                    refreshStats();
+                } else {
+                    addLog('❌ Failed to clear cache');
+                }
+            } catch (error) {
+                addLog('❌ Error clearing cache');
+            }
+        }
+
+        async function rebuildIndex() {
+            if (!confirm('Rebuild search index? This may take a minute.')) return;
+
+            addLog('🔄 Starting index rebuild...');
+
+            try {
+                const response = await fetch('/api/ingest', { method: 'POST' });
+                const data = await response.json();
+
+                if (data.success) {
+                    addLog(`✓ Index rebuilt: ${data.pagesIndexed} pages, ${data.chunksCreated} chunks`);
+                    loadIndexStatus();
+                } else {
+                    addLog(`❌ Rebuild failed: ${data.error}`);
+                }
+            } catch (error) {
+                addLog('❌ Error rebuilding index');
+            }
+        }
+
+        // Load everything on page load
+        loadIndexStatus();
+        refreshStats();
+
+        // Auto-refresh every 10 seconds
+        setInterval(() => {
+            refreshStats();
+            loadIndexStatus();
+        }, 10000);
+    </script>
+</body>
+</html>
+

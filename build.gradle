@@ -1,0 +1,56 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.4.2'
+    id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'me.internalizable'
+version = '0.0.1-SNAPSHOT'
+description = 'knowi-search'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // Lombok
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
+
+    // Jsoup for HTML parsing and web crawling
+    implementation 'org.jsoup:jsoup:1.18.3'
+
+    // Lucene for full-text search (latest stable)
+    implementation 'org.apache.lucene:lucene-core:9.12.1'
+    implementation 'org.apache.lucene:lucene-analysis-common:9.12.1'
+    implementation 'org.apache.lucene:lucene-queryparser:9.12.1'
+    implementation 'org.apache.lucene:lucene-backward-codecs:9.12.1'
+
+    // Caffeine cache for local L1 caching
+    implementation 'com.github.ben-manes.caffeine:caffeine:3.1.8'
+
+    // Rate limiting with Bucket4j
+    implementation 'com.bucket4j:bucket4j-core:8.10.1'
+
+    // Lettuce Redis client (included via spring-boot-starter-data-redis)
+    // For connection pooling
+    implementation 'org.apache.commons:commons-pool2:2.12.0'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}

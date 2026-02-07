@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Knowi Documentation Assistant</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            200: '#c7d2fe',
+                            300: '#a5b4fc',
+                            400: '#818cf8',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            800: '#3730a3',
+                            900: '#312e81',
+                        }
+                    },
+                    animation: {
+                        'bounce-slow': 'bounce 1.4s infinite',
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="h-full bg-gray-50 font-['Inter']">
+    <div class="flex flex-col h-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Header -->
+        <header class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 py-4 border-b border-gray-200">
+            <div class="flex items-center gap-3">
+                <div class="flex-shrink-0 w-10 h-10 bg-primary-600 rounded-lg flex items-center justify-center">
+                    <svg class="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M8 6L14 12L8 18V6Z" fill="currentColor"/>
+                        <path d="M14 6L20 12L14 18V6Z" fill="currentColor" fill-opacity="0.5"/>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-xl font-semibold text-gray-900">Knowi Docs Assistant</h1>
+                    <p class="text-sm text-gray-500">Powered by Perplexity AI</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <a href="/admin/dashboard" class="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1" title="Admin Dashboard">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    </svg>
+                    Admin
+                </a>
+                <button
+                    id="ingestBtn"
+                    class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Crawl and index Knowi documentation"
+                >
+                    <svg id="ingestIcon" class="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M4 4V9H4.58152M19.9381 11C19.446 7.05369 16.0796 4 12 4C8.64262 4 5.76829 6.06817 4.58152 9M4.58152 9H9M20 20V15H19.4185M19.4185 15C18.2317 17.9318 15.3574 20 12 20C7.92038 20 4.55399 16.9463 4.06189 13M19.4185 15H15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span id="ingestText">Rebuild Index</span>
+                </button>
+                <span id="indexStatus" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800"></span>
+            </div>
+        </header>
+
+        <!-- Chat Container -->
+        <main class="flex-1 flex flex-col min-h-0 bg-white rounded-xl shadow-sm border border-gray-200 my-4 overflow-hidden">
+            <!-- Messages -->
+            <div id="chatMessages" class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
+                <!-- Welcome Message -->
+                <div class="flex gap-3 max-w-3xl">
+                    <div class="flex-shrink-0 w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
+                        <svg class="w-5 h-5 text-primary-600" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <div class="flex-1 bg-gray-50 rounded-2xl rounded-tl-none p-4">
+                        <p class="text-gray-800 mb-3">Hello! I'm your Knowi Documentation Assistant. I can help you with questions about:</p>
+                        <p class="text-gray-600 text-sm">
+                            <span class="font-medium text-primary-600">💡 Tip:</span>
+                            Click "Rebuild Index" to crawl and index the latest Knowi documentation for better answers.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Input Area -->
+            <div class="border-t border-gray-200 p-4 sm:p-6 bg-gray-50/50">
+                <form id="chatForm" class="relative">
+                    <div class="flex items-end gap-3">
+                        <div class="flex-1 relative">
+                            <textarea
+                                id="userInput"
+                                placeholder="Ask a question about Knowi..."
+                                rows="1"
+                                class="w-full resize-none rounded-xl border border-gray-300 bg-white px-4 py-3 pr-12 text-gray-900 placeholder-gray-500 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 focus:outline-none transition-shadow text-sm sm:text-base"
+                                style="max-height: 150px;"
+                            ></textarea>
+                        </div>
+                        <button
+                            type="submit"
+                            id="sendButton"
+                            class="flex-shrink-0 w-11 h-11 inline-flex items-center justify-center rounded-xl bg-primary-600 text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            title="Send message"
+                        >
+                            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M22 2L11 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </button>
+                    </div>
+                </form>
+                <p class="mt-3 text-xs text-center text-gray-500">
+                    This assistant uses AI to search and summarize Knowi documentation. Always verify critical information.
+                </p>
+            </div>
+        </main>
+    </div>
+
+    <script src="/js/chat.js"></script>
+</body>
+</html>
+

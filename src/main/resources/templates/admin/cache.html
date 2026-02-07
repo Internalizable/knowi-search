@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cache Management - Knowi Search</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center space-x-4">
+                    <a href="/admin/dashboard" class="text-gray-600 hover:text-gray-900">← Dashboard</a>
+                    <h1 class="text-xl font-bold text-gray-900">⚡ Cache Management</h1>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Cache Overview -->
+        <div class="bg-white rounded-lg shadow mb-6">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h2 class="text-lg font-semibold text-gray-900">Cache Overview</h2>
+            </div>
+            <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- L1 Cache -->
+                    <div class="border rounded-lg p-4">
+                        <h3 class="font-semibold text-gray-700 mb-3">L1 Cache (Local)</h3>
+                        <div id="l1Stats" class="space-y-2 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Type:</span>
+                                <span class="font-medium">Caffeine</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Size:</span>
+                                <span class="font-medium" id="l1Size">-</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Hits:</span>
+                                <span class="font-medium text-green-600" id="l1Hits">-</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Hit Rate:</span>
+                                <span class="font-medium" id="l1HitRate">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- L2 Cache -->
+                    <div class="border rounded-lg p-4">
+                        <h3 class="font-semibold text-gray-700 mb-3">L2 Cache (Redis)</h3>
+                        <div id="l2Stats" class="space-y-2 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Status:</span>
+                                <span class="font-medium" id="l2Status">-</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Size:</span>
+                                <span class="font-medium" id="l2Size">-</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Hits:</span>
+                                <span class="font-medium text-green-600" id="l2Hits">-</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">TTL:</span>
+                                <span class="font-medium" id="l2TTL">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Combined Stats -->
+                    <div class="border rounded-lg p-4 bg-gradient-to-br from-blue-50 to-purple-50">
+                        <h3 class="font-semibold text-gray-700 mb-3">Combined Performance</h3>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Total Hits:</span>
+                                <span class="font-medium" id="totalHits">-</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Total Misses:</span>
+                                <span class="font-medium" id="totalMisses">-</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Hit Rate:</span>
+                                <span class="font-medium text-green-600 text-lg" id="combinedHitRate">-</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Fingerprints:</span>
+                                <span class="font-medium" id="fingerprints">-</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cache Actions -->
+        <div class="bg-white rounded-lg shadow mb-6">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h2 class="text-lg font-semibold text-gray-900">Actions</h2>
+            </div>
+            <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <button onclick="clearAllCache()" class="px-6 py-4 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition-colors border border-red-200">
+                        <div class="text-2xl mb-2">🗑️</div>
+                        <div class="font-semibold">Clear All Caches</div>
+                        <div class="text-xs mt-1">L1 + L2 + Fingerprints</div>
+                    </button>
+
+                    <button onclick="refreshStats()" class="px-6 py-4 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors border border-blue-200">
+                        <div class="text-2xl mb-2">🔄</div>
+                        <div class="font-semibold">Refresh Stats</div>
+                        <div class="text-xs mt-1">Update all metrics</div>
+                    </button>
+
+                    <button onclick="showDebugModal()" class="px-6 py-4 bg-purple-50 text-purple-700 rounded-lg hover:bg-purple-100 transition-colors border border-purple-200">
+                        <div class="text-2xl mb-2">🔍</div>
+                        <div class="font-semibold">Query Debugger</div>
+                        <div class="text-xs mt-1">Analyze similarity</div>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cache Configuration -->
+        <div class="bg-white rounded-lg shadow">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h2 class="text-lg font-semibold text-gray-900">Configuration</h2>
+            </div>
+            <div class="p-6">
+                <div class="space-y-4">
+                    <div class="flex justify-between items-center py-3 border-b">
+                        <div>
+                            <div class="font-medium">Similarity Threshold</div>
+                            <div class="text-sm text-gray-600">Current: <span id="threshold">70%</span></div>
+                        </div>
+                        <div class="text-sm text-gray-500">Configured in application.properties</div>
+                    </div>
+                    <div class="flex justify-between items-center py-3 border-b">
+                        <div>
+                            <div class="font-medium">L1 Max Size</div>
+                            <div class="text-sm text-gray-600">500 entries</div>
+                        </div>
+                        <div class="text-sm text-gray-500">TTL: 30 minutes</div>
+                    </div>
+                    <div class="flex justify-between items-center py-3">
+                        <div>
+                            <div class="font-medium">L2 Redis</div>
+                            <div class="text-sm text-gray-600" id="redisConfig">Loading...</div>
+                        </div>
+                        <div class="text-sm text-gray-500">TTL: 60 minutes</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Debug Modal -->
+    <div id="debugModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                <h3 class="text-lg font-semibold">Query Similarity Debugger</h3>
+                <button onclick="closeDebugModal()" class="text-gray-400 hover:text-gray-600">✕</button>
+            </div>
+            <div class="p-6">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Query 1</label>
+                        <input type="text" id="query1" class="w-full px-3 py-2 border rounded-lg"
+                               placeholder="How do I create a dashboard?">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Query 2</label>
+                        <input type="text" id="query2" class="w-full px-3 py-2 border rounded-lg"
+                               placeholder="Creating a dashboard">
+                    </div>
+                    <button onclick="analyzeQueries()" class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                        Analyze Similarity
+                    </button>
+                    <div id="debugResult" class="hidden mt-4 p-4 bg-gray-50 rounded-lg text-sm"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function refreshStats() {
+            try {
+                const response = await fetch('/api/cache/stats');
+                const stats = await response.json();
+
+                // L1 stats
+                const l1 = stats.l1 || {};
+                document.getElementById('l1Size').textContent = l1.size || 0;
+                document.getElementById('l1Hits').textContent = l1.hits || 0;
+                document.getElementById('l1HitRate').textContent = l1.hit_rate || 'N/A';
+
+                // L2 stats
+                if (stats.l2 === 'disabled') {
+                    document.getElementById('l2Status').textContent = 'Disabled';
+                    document.getElementById('l2Status').className = 'font-medium text-gray-500';
+                    document.getElementById('l2Size').textContent = 'N/A';
+                    document.getElementById('l2Hits').textContent = 'N/A';
+                    document.getElementById('l2TTL').textContent = 'N/A';
+                    document.getElementById('redisConfig').textContent = 'Redis not configured';
+                } else {
+                    const l2 = stats.l2 || {};
+                    document.getElementById('l2Status').textContent = 'Active';
+                    document.getElementById('l2Status').className = 'font-medium text-green-600';
+                    document.getElementById('l2Size').textContent = l2.size || 0;
+                    document.getElementById('l2Hits').textContent = l2.hits || 0;
+                    document.getElementById('l2TTL').textContent = l2.ttl_seconds ? `${l2.ttl_seconds}s` : 'N/A';
+                    document.getElementById('redisConfig').textContent = `Prefix: ${l2.prefix || 'knowi:chat'}`;
+                }
+
+                // Combined stats
+                document.getElementById('totalHits').textContent = stats.total_hits || 0;
+                document.getElementById('totalMisses').textContent = stats.total_misses || 0;
+                document.getElementById('combinedHitRate').textContent = stats.combined_hit_rate || 'N/A';
+                document.getElementById('fingerprints').textContent = stats.fingerprints || 0;
+                document.getElementById('threshold').textContent =
+                    ((stats.similarity_threshold || 0.7) * 100).toFixed(0) + '%';
+
+            } catch (error) {
+                console.error('Failed to refresh stats:', error);
+            }
+        }
+
+        async function clearAllCache() {
+            if (!confirm('Clear all caches? This cannot be undone.')) return;
+
+            try {
+                const response = await fetch('/api/cache/clear', { method: 'POST' });
+                const data = await response.json();
+
+                if (data.success) {
+                    alert('✓ All caches cleared successfully');
+                    refreshStats();
+                } else {
+                    alert('❌ Failed to clear cache');
+                }
+            } catch (error) {
+                alert('❌ Error clearing cache');
+            }
+        }
+
+        function showDebugModal() {
+            document.getElementById('debugModal').classList.remove('hidden');
+        }
+
+        function closeDebugModal() {
+            document.getElementById('debugModal').classList.add('hidden');
+        }
+
+        async function analyzeQueries() {
+            const query1 = document.getElementById('query1').value.trim();
+            const query2 = document.getElementById('query2').value.trim();
+
+            if (!query1 || !query2) {
+                alert('Please enter both queries');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/cache/debug/similarity?query1=${encodeURIComponent(query1)}&query2=${encodeURIComponent(query2)}`);
+                const data = await response.json();
+
+                const resultDiv = document.getElementById('debugResult');
+                resultDiv.innerHTML = `
+                    <div class="space-y-3">
+                        <div>
+                            <div class="font-semibold mb-1">Query 1:</div>
+                            <div class="text-xs text-gray-600 mb-1">Normalized: ${data.query1.normalized}</div>
+                            <div class="text-xs text-gray-600">Tokens: ${Array.from(data.query1.tokens).join(', ')}</div>
+                            <div class="text-xs font-mono mt-1">Key: ${data.query1.cacheKey}</div>
+                        </div>
+                        <div>
+                            <div class="font-semibold mb-1">Query 2:</div>
+                            <div class="text-xs text-gray-600 mb-1">Normalized: ${data.query2.normalized}</div>
+                            <div class="text-xs text-gray-600">Tokens: ${Array.from(data.query2.tokens).join(', ')}</div>
+                            <div class="text-xs font-mono mt-1">Key: ${data.query2.cacheKey}</div>
+                        </div>
+                        <div class="pt-3 border-t">
+                            <div class="flex justify-between items-center">
+                                <span class="font-semibold">Similarity:</span>
+                                <span class="text-xl font-bold ${data.wouldMatchCache ? 'text-green-600' : 'text-red-600'}">
+                                    ${data.similarity}
+                                </span>
+                            </div>
+                            <div class="text-sm text-gray-600 mt-1">Threshold: ${data.threshold}</div>
+                            <div class="mt-2 p-2 rounded ${data.wouldMatchCache ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}">
+                                ${data.wouldMatchCache ? '✓ Would match in cache' : '✗ Would NOT match in cache'}
+                            </div>
+                            ${data.sameExactKey ? '<div class="text-xs text-blue-600 mt-1">ℹ️ Exact same cache key</div>' : ''}
+                        </div>
+                    </div>
+                `;
+                resultDiv.classList.remove('hidden');
+            } catch (error) {
+                alert('❌ Error analyzing queries');
+            }
+        }
+
+        // Load stats on page load
+        refreshStats();
+
+        // Auto-refresh every 5 seconds
+        setInterval(refreshStats, 5000);
+    </script>
+</body>
+</html>
+
