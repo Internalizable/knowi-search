@@ -1,6 +1,16 @@
 # Knowi Documentation Chatbot
 
+[![Build and Release](https://github.com/Internalizable/knowi-search/actions/workflows/build-and-release.yml/badge.svg)](https://github.com/Internalizable/knowi-search/actions/workflows/build-and-release.yml)
+[![Latest Release](https://img.shields.io/github/v/release/Internalizable/knowi-search?include_prereleases)](https://github.com/Internalizable/knowi-search/releases/latest)
+[![Java](https://img.shields.io/badge/Java-21-orange)](https://openjdk.org/projects/jdk/21/)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.4-green)](https://spring.io/projects/spring-boot)
+[![License](https://img.shields.io/badge/License-All%20Rights%20Reserved-red)](LICENSE)
+
 A documentation chatbot for Knowi that uses RAG (Retrieval-Augmented Generation) to answer user questions. Built with Java/Spring Boot, Apache Lucene for search, and Perplexity AI for response generation.
+
+## Demo
+
+[![Demo Video](https://img.youtube.com/vi/NdJ3eiAYjRc/maxresdefault.jpg)](https://youtu.be/NdJ3eiAYjRc)
 
 ## What This Does
 
