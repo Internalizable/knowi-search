@@ -2,46 +2,164 @@ name: Build and Release
 
 on:
   push:
-    branches: [main]
     tags:
       - 'v*'
   workflow_dispatch:
+    inputs:
+      release_type:
+        description: 'Release type'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - stable
+          - dev
+
+permissions:
+  contents: write
 
 jobs:
-  build:
+  release:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Set up Java 21
+      - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
           java-version: '21'
           distribution: 'temurin'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
+        uses: gradle/actions/setup-gradle@v4
 
       - name: Build with Gradle
         run: |
           chmod +x ./gradlew
-          ./gradlew bootJar
+          ./gradlew bootJar --no-daemon --stacktrace
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: knowi-search-jar
-          path: build/libs/knowi-search-*.jar
-          retention-days: 30
+      - name: Verify build artifacts exist
+        run: |
+          echo "Checking for build artifacts..."
+          ls -la build/libs/ || { echo "ERROR: artifacts missing"; exit 1; }
+
+      - name: Get project version from gradle.properties
+        id: version
+        run: |
+          VERSION=$(grep "^version=" gradle.properties | cut -d'=' -f2 || echo "0.0.1-SNAPSHOT")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Project version: $VERSION"
+
+      - name: Determine release type
+        id: release_type
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            TYPE="${{ github.event.inputs.release_type }}"
+          elif [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            TYPE="stable"
+          else
+            TYPE="dev"
+          fi
+          
+          if [[ "$TYPE" == "stable" ]]; then
+            echo "type=stable" >> $GITHUB_OUTPUT
+            echo "prerelease=false" >> $GITHUB_OUTPUT
+            echo "suffix=" >> $GITHUB_OUTPUT
+          else
+            echo "type=dev" >> $GITHUB_OUTPUT
+            echo "prerelease=true" >> $GITHUB_OUTPUT
+            echo "suffix=-dev" >> $GITHUB_OUTPUT
+          fi
+          echo "Release type: $TYPE"
+
+      - name: Create release tag
+        id: tag
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            TAG="${{ github.ref_name }}"
+          else
+            SUFFIX="${{ steps.release_type.outputs.suffix }}"
+            BUILD_NUM="${{ github.run_number }}"
+            TAG="v${{ steps.version.outputs.version }}${SUFFIX}-build.${BUILD_NUM}"
+          fi
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "Release tag: $TAG"
+
+      - name: Prepare release artifacts
+        run: |
+          mkdir -p release
+          cp build/libs/knowi-search-*.jar release/
+          
+          echo "Release artifacts:"
+          ls -la release/
+          
+          ARTIFACT_COUNT=$(ls release/*.jar 2>/dev/null | wc -l)
+          if [[ "$ARTIFACT_COUNT" -eq 0 ]]; then
+            echo "ERROR: No artifacts found for release!"
+            exit 1
+          fi
+          echo "Found $ARTIFACT_COUNT artifact(s)"
 
       - name: Create Release
-        if: startsWith(github.ref, 'refs/tags/v')
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
-          files: build/libs/knowi-search-*.jar
+          tag_name: ${{ steps.tag.outputs.tag }}
+          name: "Knowi Search ${{ steps.tag.outputs.tag }}"
+          body: |
+            ## Knowi Documentation Chatbot
+            
+            **Release Type:** ${{ steps.release_type.outputs.type == 'stable' && '🟢 Stable' || '🟡 Development' }}
+            **Version:** `${{ steps.version.outputs.version }}`
+            **Build:** `#${{ github.run_number }}`
+            **Commit:** [`${{ github.sha }}`](https://github.com/${{ github.repository }}/commit/${{ github.sha }})
+            
+            ---
+            
+            ### 📦 Artifacts
+            
+            | File | Description |
+            |------|-------------|
+            | `knowi-search-*.jar` | Spring Boot application |
+            
+            ---
+            
+            ### 🚀 Quick Start
+            
+            1. Download `knowi-search-*.jar`
+            2. Set environment variable: `export PERPLEXITY_API_KEY="your-key"`
+            3. Run: `java -jar knowi-search-*.jar`
+            4. Open `http://localhost:8080`
+            5. Go to Admin Dashboard and click "Crawl & Index"
+            
+            ### Requirements
+            
+            - Java 21+
+            - Redis (optional, for distributed caching)
+
+          draft: false
+          prerelease: ${{ steps.release_type.outputs.prerelease }}
+          files: |
+            release/*.jar
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Summary
+        run: |
+          echo "## 🎉 Release Created" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| **Tag** | \`${{ steps.tag.outputs.tag }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Type** | ${{ steps.release_type.outputs.type }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Version** | \`${{ steps.version.outputs.version }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Artifacts" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          ls -la release/*.jar >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
 
